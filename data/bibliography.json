@@ -1,0 +1,404 @@
+[
+  {
+    "id": 1,
+    "title": "Wiersze",
+    "publisher": "Czytelnik",
+    "city": "Warszawa",
+    "year": 1967,
+    "genre": "poetry"
+  },
+  {
+    "id": 2,
+    "title": "Drugi zbiór wierszy",
+    "publisher": "Czytelnik",
+    "city": "Warszawa",
+    "year": 1970,
+    "genre": "poetry"
+  },
+  {
+    "id": 3,
+    "title": "Trzeci zbiór wierszy",
+    "publisher": "Czytelnik",
+    "city": "Warszawa",
+    "year": 1972,
+    "genre": "poetry"
+  },
+  {
+    "id": 4,
+    "title": "Czwarty zbiór wierszy",
+    "publisher": "Czytelnik",
+    "city": "Warszawa",
+    "year": 1974,
+    "genre": "poetry"
+  },
+  {
+    "id": 5,
+    "title": "Piąty zbiór wierszy",
+    "publisher": "Czytelnik",
+    "city": "Warszawa",
+    "year": 1978,
+    "genre": "poetry"
+  },
+  {
+    "id": 6,
+    "title": "Nie o śmierć tutaj chodzi, lecz o biały kordonek",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 1982,
+    "genre": "poetry / prose poem"
+  },
+  {
+    "id": 7,
+    "title": "Przechowalnia ciemności",
+    "publisher": "Warszawska Niezależna Oficyna Poetów i Malarzy",
+    "city": "Warszawa",
+    "year": 1985,
+    "genre": "poetry"
+  },
+  {
+    "id": 8,
+    "title": "Strefa ograniczonego postoju",
+    "publisher": "Czytelnik",
+    "city": "Warszawa",
+    "year": 1990,
+    "genre": "poetry"
+  },
+  {
+    "id": 9,
+    "title": "Stypendyści czasu",
+    "publisher": "Wydawnictwo Dolnośląskie",
+    "city": "Wrocław",
+    "year": 1994,
+    "genre": "poetry"
+  },
+  {
+    "id": 10,
+    "title": "Ludzie dla początkujących",
+    "publisher": "Wydawnictwo a5",
+    "city": "Poznań",
+    "year": 1997,
+    "genre": "poetry / prose poem"
+  },
+  {
+    "id": 11,
+    "title": "1999",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 1999,
+    "genre": "poetry"
+  },
+  {
+    "id": 12,
+    "title": "Sklepy zoologiczne",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2001,
+    "genre": "poetry"
+  },
+  {
+    "id": 13,
+    "title": "Ja",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2003,
+    "genre": "poetry"
+  },
+  {
+    "id": 14,
+    "title": "Gdzie Indziej",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2005,
+    "genre": "poetry"
+  },
+  {
+    "id": 15,
+    "title": "Drzazga",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2006,
+    "genre": "poetry"
+  },
+  {
+    "id": 16,
+    "title": "Pomarańcza Newtona",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2007,
+    "genre": "poetry"
+  },
+  {
+    "id": 17,
+    "title": "Pogłos",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2010,
+    "genre": "poetry"
+  },
+  {
+    "id": 18,
+    "title": "Czytnik linii papilarnych",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2015,
+    "genre": "poetry"
+  },
+  {
+    "id": 19,
+    "title": "Pamięć operacyjna",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2017,
+    "genre": "poetry"
+  },
+  {
+    "id": 20,
+    "title": "Miłość w trybie awaryjnym",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2019,
+    "genre": "poetry"
+  },
+  {
+    "id": 21,
+    "title": "Żywa śmierć",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 1979,
+    "genre": "prose poem"
+  },
+  {
+    "id": 22,
+    "title": "Sefer",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2009,
+    "genre": "prose poem"
+  },
+  {
+    "id": 23,
+    "title": "Droga pani Schubert…",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2012,
+    "genre": "prose poem"
+  },
+  {
+    "id": 24,
+    "title": "Miłość, droga pani Schubert…",
+    "publisher": "Wydawnictwo a5",
+    "city": "Kraków",
+    "year": 2013,
+    "genre": "poetry"
+  },
+  {
+    "id": 25,
+    "title": "W jednym płaszczu, w jednym rękawie: piosenki",
+    "publisher": "Biblioteka Śląska",
+    "city": "Katowice",
+    "year": 2002,
+    "genre": "song"
+  },
+  {
+    "id": 26,
+    "title": "Serca na rowerach",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2004,
+    "genre": "song"
+  },
+  {
+    "id": 27,
+    "title": "Dom spokojnej młodości",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 1979,
+    "genre": "choice"
+  },
+  {
+    "id": 28,
+    "title": "Utwory wybrane",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 1986,
+    "genre": "choice"
+  },
+  {
+    "id": 29,
+    "title": "Wakacje mizantropa",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 1993,
+    "genre": "choice"
+  },
+  {
+    "id": 30,
+    "title": "Przechowalnia ciemności i inne wiersze",
+    "publisher": "Spółdzielnia Wydawnicza ANAGRAM",
+    "city": "Warszawa",
+    "year": 1994,
+    "genre": "choice"
+  },
+  {
+    "id": 31,
+    "title": "Wspólnicy zielonego wiatraczka",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 1996,
+    "genre": "choice"
+  },
+  {
+    "id": 32,
+    "title": "Godziny poza godzinami",
+    "publisher": "Państwowy Instytut Wydawniczy",
+    "city": "Kraków",
+    "year": 1998,
+    "genre": "choice / prose poem"
+  },
+  {
+    "id": 33,
+    "title": "Uwaga: stopień",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2002,
+    "genre": "choice"
+  },
+  {
+    "id": 34,
+    "title": "Sekwens",
+    "publisher": "Świat Książki",
+    "city": "Warszawa",
+    "year": 2003,
+    "genre": "choice"
+  },
+  {
+    "id": 35,
+    "title": "Lektura istnienia",
+    "publisher": "Wydawnictwo „DjaF”",
+    "city": "Kraków",
+    "year": 2004,
+    "genre": "choice"
+  },
+  {
+    "id": 36,
+    "title": "Z daleka",
+    "publisher": "Wydawnictwo Uniwersytetu Marii Curie-Skłodowskiej",
+    "city": "Lublin",
+    "year": 2005,
+    "genre": "choice"
+  },
+  {
+    "id": 37,
+    "title": "Wspólnicy zielonego wiatraczka",
+    "publisher": "Presspublica",
+    "city": "Warszawa",
+    "year": 2007,
+    "genre": "choice"
+  },
+  {
+    "id": 38,
+    "title": "Wiersze wybrane",
+    "publisher": "Wydawnictwo a5",
+    "city": "Kraków",
+    "year": 2015,
+    "genre": "choice"
+  },
+  {
+    "id": 39,
+    "title": "Życie zastępcze",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 1998,
+    "genre": "choice",
+    "language": "bilingual"
+  },
+  {
+    "id": 40,
+    "title": "Białe truskawki",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2000,
+    "genre": "choice",
+    "language": "bilingual"
+  },
+  {
+    "id": 41,
+    "title": "Miasteczko Świat",
+    "publisher": "Wydawnictwo Literackie",
+    "city": "Kraków",
+    "year": 2007,
+    "genre": "choice",
+    "language": "bilingual"
+  },
+  {
+    "id": 42,
+    "title": "Pęknięte oko czasu (droga pani Schubert…)",
+    "publisher": "Wydawnictwo Austeria",
+    "city": "Kraków / Budapeszt",
+    "year": 2017,
+    "genre": "choice",
+    "language": "bilingual"
+  },
+  {
+    "others": [
+      {
+        "id": 43,
+        "title": "„Boli tylko, gdy się śmieję…”. Listy i rozmowy",
+        "publisher": "Wydawnictwo Literackie",
+        "city": "Kraków",
+        "year": 2018,
+        "genre": "letters",
+        "type": "book",
+        "co-authors": "Lem Stanisław, Lem Tomasz"
+      },
+      {
+        "id": 44,
+        "title": "„W poszukiwaniu dróg”",
+        "publisher": "Universal Music Polska",
+        "year": 2015,
+        "genre": "song",
+        "type": "CD",
+        "co-authors": "Preisner Zbigniew"
+      },
+      {
+        "id": 45,
+        "title": "„2016 Dokąd?”",
+        "publisher": "Universal Music Polska",
+        "year": 2017,
+        "genre": "song",
+        "type": "CD",
+        "co-authors": "Preisner Zbigniew"
+      },
+      {
+        "id": 46,
+        "title": "Trwanie",
+        "revue": "„Życie Literackie”",
+        "number": 16,
+        "year": 1966,
+        "pages": [6],
+        "genre": "prose poem",
+        "type": "revue"
+      },
+      {
+        "id": 47,
+        "title": "W potrzasku",
+        "revue": "„Fantastyka”",
+        "number": 1,
+        "year": 1988,
+        "pages": [51, 52],
+        "genre": "prose poem",
+        "type": "revue"
+      },
+      {
+        "id": 48,
+        "title": "Saturn",
+        "revue": "„Odra”",
+        "number": 10,
+        "year": 1999,
+        "pages": [69, 70],
+        "genre": "prose poem",
+        "type": "revue"
+      }
+    ]
+  }
+]
