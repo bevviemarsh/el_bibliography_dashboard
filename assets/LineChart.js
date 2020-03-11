@@ -1,6 +1,7 @@
 (function() {
   const lineChart = (function() {
-    const DATA = "../data/bibliography.json";
+    const DATA =
+      "https://bevviemarsh.github.io/el_bibliography_dashboard/data/bibliography.json";
     const PROPERTYNAME = "year";
     const OTHERS = "others";
     const SELECTION = "circle";

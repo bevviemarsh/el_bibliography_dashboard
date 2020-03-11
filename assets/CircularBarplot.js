@@ -1,6 +1,7 @@
 (function() {
   const circularBarPlot = (function() {
-    const DATA = "../data/bibliography.json";
+    const DATA =
+      "https://bevviemarsh.github.io/el_bibliography_dashboard/data/bibliography.json";
     const PROPERTYNAME = "city";
     const OTHERS = "others";
     const VALUE = "value";
