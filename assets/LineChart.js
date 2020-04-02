@@ -47,19 +47,25 @@
       let minYear;
       let maxYear;
 
+      const getMainData = (arr, getItem) =>
+        arr.reduce((acc, el) => {
+          if (!getItem(el, PROPERTYNAME)) return acc;
+          return [...acc, getItem(el, PROPERTYNAME)];
+        }, []);
+
       const getPeriodRange = data => {
-        const getYear = datum =>
-          datum
-            .filter(item => getItemByProperty(item, PROPERTYNAME))
-            .map(item => getItemByProperty(item, PROPERTYNAME));
+        // const getYear = datum =>
+        //   datum
+        //     .filter(item => getItemByProperty(item, PROPERTYNAME))
+        //     .map(item => getItemByProperty(item, PROPERTYNAME));
 
         const mainData = data;
         const additionalData = data.find(item =>
           getItemByProperty(item, OTHERS)
         ).others;
 
-        const mainYears = getYear(mainData);
-        const additionalYears = getYear(additionalData);
+        const mainYears = getMainData(mainData, getItemByProperty);
+        const additionalYears = getMainData(additionalData, getItemByProperty);
 
         const allYears = mainYears.concat(additionalYears);
         minYear = Math.floor(Math.min(...allYears) / 10) * 10;

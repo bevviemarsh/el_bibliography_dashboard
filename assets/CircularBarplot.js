@@ -57,20 +57,22 @@
         .others.filter(item => getItemByProperty(item, PROPERTYNAME))
         .map(item => getItemByProperty(item, PROPERTYNAME));
 
-      const mainData = getMainData(data, getItemByProperty)
-        .concat(additionalData)
-        .reduce((allProperties, property) => {
-          property in allProperties
-            ? allProperties[property]++
-            : (allProperties[property] = 1);
+      const mainData = getMainData(data, getItemByProperty).concat(
+        additionalData
+      );
 
-          return allProperties;
-        }, {});
+      const countedMainData = mainData.reduce((allProperties, property) => {
+        property in allProperties
+          ? allProperties[property]++
+          : (allProperties[property] = 1);
 
-      const sortedMainData = Object.keys(mainData)
+        return allProperties;
+      }, {});
+
+      const sortedMainData = Object.keys(countedMainData)
         .map(key => ({
           [PROPERTYNAME]: String(key),
-          value: mainData[key]
+          value: countedMainData[key]
         }))
         .sort((a, b) => sortDataByProperty(a, b, VALUE));
 
