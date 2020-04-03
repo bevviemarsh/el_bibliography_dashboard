@@ -213,22 +213,31 @@
       chartDeviations.pieChartDeviations.chartPositionDeviation.horizontalParam,
       chartDeviations.pieChartDeviations.chartPositionDeviation.verticalParam
     );
+    const lineChartPosition = chartParams.translate(
+      graphMargin.left * 3,
+      chartDeviations.lineChartDeviations.lineChartHorizontalParam
+    );
 
     const circularGraph = getMainChartStructure(circular, circularPosition);
     const lollipopGraph = getMainChartStructure(lollipop, lollipopPosition);
     const pieGraph = getMainChartStructure(pie, piePosition);
+    const lineGraph = getMainChartStructure(line, lineChartPosition);
 
     const createDataHelpers = () => {
       const getItemByProperty = (item, property) => item[property];
+
       const filterDataHigherThenOne = (item, property) => item[property] > 1;
       const filterDataLowerThenOne = (item, property) => item[property] <= 1;
+
       const sortDataByProperty = (firstItem, secondItem, property) =>
         firstItem[property] - secondItem[property];
+
       const getDataByProperty = (arr, filterItem, getItem, propertyName) =>
         arr.reduce((acc, el) => {
           if (!filterItem(el, propertyName)) return acc;
           return [...acc, getItem(el, propertyName)];
         }, []);
+
       const getAdditionalData = (arr, getItem, propertyName) =>
         arr.find(item => getItem(item, propertyName))[propertyName];
 
@@ -321,6 +330,59 @@
         return mainData;
       };
 
+      const getCountedDataYears = (data, propertyName) => {
+        const allPeriods = [];
+
+        const mainData = data;
+        const additionalData = getAdditionalData(
+          data,
+          getItemByProperty,
+          PROPERTY_OTHERS
+        );
+
+        const mainYears = getDataByProperty(
+          mainData,
+          getItemByProperty,
+          getItemByProperty,
+          PROPERTY_YEAR
+        );
+        const additionalYears = getDataByProperty(
+          additionalData,
+          getItemByProperty,
+          getItemByProperty,
+          PROPERTY_YEAR
+        );
+
+        const allYears = mainYears.concat(additionalYears);
+        const minYear = Math.floor(Math.min(...allYears) / 10) * 10;
+        const maxYear = Math.round(Math.max(...allYears) / 10) * 10;
+
+        const getPeriods = (data, firstYear, secondYear) => {
+          const addFilteredPeriod = item => {
+            if (
+              getItemByProperty(item, propertyName) > firstYear &&
+              getItemByProperty(item, propertyName) <= secondYear
+            ) {
+              allPeriods.push(`${firstYear}-${secondYear}`);
+            }
+          };
+
+          data.forEach(item => addFilteredPeriod(item));
+          getAdditionalData(
+            data,
+            getItemByProperty,
+            PROPERTY_OTHERS
+          ).forEach(item => addFilteredPeriod(item));
+
+          if (firstYear === maxYear) return;
+          firstYear += 10;
+          return getPeriods(data, firstYear, secondYear + 10);
+        };
+        getPeriods(data, minYear, minYear + 10);
+
+        return allPeriods;
+      };
+
       const sortedDataForCircular = getCountedAndSortedData(
         dataCities,
         PROPERTY_CITY
@@ -336,17 +398,24 @@
         PROPERTY_PUBLISHER
       );
 
+      const sortedDataForLineGraph = getCountedAndSortedData(
+        getCountedDataYears(data, PROPERTY_YEAR),
+        PROPERTY_YEAR
+      );
+
       getCalulatedData(
         sortedDataForCircular,
         sortedDataForLollipop,
-        sortedDataForPieChart
+        sortedDataForPieChart,
+        sortedDataForLineGraph
       );
     };
 
     const getCalulatedData = (
       sortedDataForCircular,
       sortedDataForLollipop,
-      sortedDataForPieChart
+      sortedDataForPieChart,
+      sortedDataForLineGraph
     ) => {
       const circularBarPlotData = sortedDataForCircular.map((d, i) => ({
         id: i,
@@ -407,7 +476,17 @@
         value: d.value
       }));
 
-      update(circularBarPlotData, lollipopData, pieChartData);
+      const lineChartData = sortedDataForLineGraph.map((d, i) => ({
+        id: i,
+        year: chartsManager.getFormattedYear(d),
+        value: d.value,
+        r: chartParams.radius,
+        cx: chartsManager.getFormattedYear(d),
+        cy: d.value,
+        text: d.value
+      }));
+
+      update(circularBarPlotData, lollipopData, pieChartData, lineChartData);
       getCalculatedCircularBarsData(circularBarPlotData);
       getCalculatedLollipopAxes(lollipopData);
       getPieChartParams(pieChartData);
@@ -534,11 +613,13 @@
         .arc()
         .innerRadius(
           chartParams.pieRadius(calculatedGraphWidth, calculatedGraphHeight) *
-            1.5
+            chartDeviations.pieChartDeviations.labelsAndPolylinesDeviation
+              .outerArcParams.innerRadius
         )
         .outerRadius(
           chartParams.pieRadius(calculatedGraphWidth, calculatedGraphHeight) *
-            1.1
+            chartDeviations.pieChartDeviations.labelsAndPolylinesDeviation
+              .outerArcParams.outerRadius
         );
 
       const midangle = d => d.startAngle + (d.endAngle - d.startAngle) / 2;
@@ -547,7 +628,8 @@
         const pos = outerArc.centroid(d);
         pos[0] =
           chartParams.pieRadius(calculatedGraphWidth, calculatedGraphHeight) *
-          1.3 *
+          chartDeviations.pieChartDeviations.labelsAndPolylinesDeviation
+            .midAngleParam *
           (midangle(d) < Math.PI ? 1 : -1);
         return `translate(${pos})`;
       };
@@ -573,6 +655,70 @@
       };
     };
 
+    const getCalculatedLineChartAxes = lineChartData => {
+      const {
+        calculatedGraphWidth,
+        calculatedGraphHeight
+      } = getSvgAndGraphParams(chartParams.chartFields.line);
+      const { labelsParams } = chartsVisualElements;
+      const { fontFamily, axesFontSize, axesLetterSpacing } = labelsParams;
+
+      const lineChartAxesAttributes = selection =>
+        selection
+          .style("font-family", fontFamily)
+          .style("font-size", axesFontSize)
+          .style("letter-spacing", axesLetterSpacing);
+
+      const lineX = d3
+        .scaleLinear()
+        .domain([
+          Math.min(...lineChartData.map(d => d.year)) -
+            chartDeviations.lineChartDeviations
+              .lineChartDataYearDeviationForXAxes,
+          Math.max(...lineChartData.map(d => d.year))
+        ])
+        .range([0, calculatedGraphWidth]);
+      const bottomAxis = d3
+        .axisBottom(lineX)
+        .ticks(6)
+        .tickFormat(d3.format("d"));
+      lineGraph
+        .append("g")
+        .attr("transform", chartParams.translate(0, calculatedGraphHeight))
+        .style("color", chartsVisualElements.colors.lineChartAxesColor)
+        .call(bottomAxis)
+        .call(lineChartAxesAttributes);
+
+      const lineY = d3
+        .scaleLinear()
+        .domain([Math.max(...lineChartData.map(d => d.value)), 0])
+        .range([graphMargin.left, calculatedGraphHeight]);
+      const leftAxis = d3.axisLeft(lineY);
+      lineGraph
+        .append("g")
+        .style("color", chartsVisualElements.colors.lineChartAxesColor)
+        .call(leftAxis)
+        .call(lineChartAxesAttributes);
+
+      return { lineX, lineY };
+    };
+
+    const getPreparedLine = (xAxis, yAxis) => {
+      const getLine = d3
+        .line()
+        .x(d => xAxis(d.year))
+        .y(d => yAxis(d.value));
+
+      return getLine;
+    };
+
+    const getCalculatedLineChartElementsPositions = () => {
+      const getCalculatedLineYPosition = (y, value) =>
+        y(value) - graphMargin.left;
+
+      return { getCalculatedLineYPosition };
+    };
+
     const renderView = (
       lollipopData,
       getCalculatedLollipopXPosition,
@@ -588,7 +734,12 @@
       arcGenerator,
       getTranslatedPieLabels,
       getPositionatedPieLabels,
-      getPositionatedPiePolylines
+      getPositionatedPiePolylines,
+      lineChartData,
+      lineX,
+      lineY,
+      getLine,
+      getCalculatedLineYPosition
     ) => {
       const {
         colors,
@@ -607,7 +758,7 @@
         letterSpacing,
         textAnchorPosition
       } = labelsParams;
-      const { labelTypes, durationTime } = chartParams;
+      const { labelTypes, durationTime, delayTime } = chartParams;
       const { circularClass, lollipopClass, pieClass, lineClass } = labelTypes;
 
       const getLabelVisualAttributes = selection =>
@@ -618,6 +769,17 @@
           .style("fill", labelColor)
           .style("opacity", opacityValue)
           .style("letter-spacing", letterSpacing);
+
+      const handlePathAnimation = (d, i, n) => {
+        let totalLength = n[i].getTotalLength();
+        d3.select(n[i])
+          .attr("stroke-dasharray", `${totalLength} ${totalLength}`)
+          .attr("stroke-dashoffset", totalLength)
+          .transition()
+          .delay(delayTime)
+          .duration(durationTime)
+          .attr("stroke-dashoffset", 0);
+      };
 
       const circularBars = circularGraph
         .append("g")
@@ -653,6 +815,21 @@
         .append("g")
         .selectAll("polyline")
         .data(pie, d => d.data.id);
+
+      const lineChartLabels = lineGraph
+        .append("g")
+        .selectAll("text")
+        .data(lineChartData, d => d.id);
+
+      const lineChartLine = lineGraph
+        .append("g")
+        .selectAll("path")
+        .data(lineChartData, d => d.id);
+
+      const lineChartCircles = lineGraph
+        .append("g")
+        .selectAll("circle")
+        .data(lineChartData, d => d.id);
 
       circularBars
         .enter()
@@ -739,6 +916,37 @@
         .attr("points", d => getPositionatedPiePolylines(d))
         .style("opacity", opacityValue);
 
+      lineChartLabels
+        .enter()
+        .append("text")
+        .attr("class", lineClass.substr(1))
+        .text(d => d.text)
+        .attr("x", d => lineX(d.cx))
+        .attr("y", d => getCalculatedLineYPosition(lineY, d.cy))
+        .call(getLabelVisualAttributes);
+
+      lineChartLine
+        .enter()
+        .append("path")
+        .attr("d", getLine(lineChartData))
+        .attr("stroke", chartsVisualElements.colors.lineChartLineColor)
+        .attr("stroke-width", strokeWidth)
+        .attr("fill", noneFill)
+        .each((d, i, n) => handlePathAnimation(d, i, n));
+
+      lineChartCircles
+        .enter()
+        .append("circle")
+        .attr("r", d => d.r)
+        .attr("cx", d => lineX(d.year))
+        .attr("cy", d => lineY(d.value))
+        .attr("fill", chartsVisualElements.colors.lineChartCircleColor)
+        .attr("cursor", cursorPointer)
+        .style("opacity", opacityValue)
+        .transition()
+        .duration(durationTime)
+        .style("opacity", 1);
+
       circularBars.exit().remove();
       circularLabels.exit().remove();
       lollipopLlines.exit().remove();
@@ -747,6 +955,9 @@
       piePath.exit().remove();
       pieLabels.exit().remove();
       piePolylines.exit().remove();
+      lineChartLabels.exit().remove();
+      lineChartLine.exit().remove();
+      lineChartCircles.exit().remove();
     };
 
     const handleEvents = (
@@ -780,7 +991,12 @@
       });
     };
 
-    const update = (circularBarPlotData, lollipopData, pieChartData) => {
+    const update = (
+      circularBarPlotData,
+      lollipopData,
+      pieChartData,
+      lineChartData
+    ) => {
       const { labelTypes, clickParams } = chartParams;
       const {
         clickedcircular,
@@ -796,7 +1012,9 @@
         lollipopCircleColor,
         lollipopClickedCircleColor,
         pieColor,
-        pieClickedColor
+        pieClickedColor,
+        lineChartCircleColor,
+        lineChartClickedCircleColor
       } = colors;
 
       const { circularX, circularY, barsData } = getCalculatedCircularBarsData(
@@ -811,12 +1029,17 @@
       } = getCalculatedLollipopElementsPositions();
 
       const { pie, arcGenerator } = getPieChartParams(pieChartData);
-
       const {
         getTranslatedPieLabels,
         getPositionatedPieLabels,
         getPositionatedPiePolylines
       } = getCalculatedPieChartLabels(arcGenerator);
+
+      const { lineX, lineY } = getCalculatedLineChartAxes(lineChartData);
+      const getLine = getPreparedLine(lineX, lineY);
+      const {
+        getCalculatedLineYPosition
+      } = getCalculatedLineChartElementsPositions();
 
       renderView(
         lollipopData,
@@ -833,7 +1056,12 @@
         arcGenerator,
         getTranslatedPieLabels,
         getPositionatedPieLabels,
-        getPositionatedPiePolylines
+        getPositionatedPiePolylines,
+        lineChartData,
+        lineX,
+        lineY,
+        getLine,
+        getCalculatedLineYPosition
       );
 
       handleEvents(
@@ -859,6 +1087,14 @@
         clickedpie,
         pieClickedColor,
         pieColor
+      );
+      handleEvents(
+        lineGraph,
+        "circle",
+        lineClass,
+        clickedline,
+        lineChartClickedCircleColor,
+        lineChartCircleColor
       );
     };
 
