@@ -9,6 +9,7 @@
     const PROPERTY_OTHERS = "others";
     const PROPERTY_VALUE = "value";
 
+    // create objects to store all necessary data for building graphs;
     const chartsVisualElements = {
       colors: {
         circularBarColor: "#054661",
@@ -72,6 +73,9 @@
         clickedline: true
       },
 
+      circularBarInnerRadius: 15,
+      circularBarOuterRadius: (graphWidthValue, graphHeightValue) =>
+        Math.min(graphWidthValue, graphHeightValue / 2),
       radius: 5.5,
       clickedCircleRadius: 7,
       pieRadius: (graphWidthValue, graphHeightValue) =>
@@ -81,18 +85,14 @@
       margin: 10,
       graphMargin: { top: 20, left: 20, right: 100, bottom: 100 },
 
+      tickSizeValue: "10",
+
       translate: (firstMarginValue, secondMarginValue) =>
         `translate(${firstMarginValue}, ${secondMarginValue})`,
 
       durationTime: 2000,
       delayTime: 1000,
-      labelDurationTime: 200,
-
-      circularBarInnerRadius: 15,
-      circularBarOuterRadius: (graphWidthValue, graphHeightValue) =>
-        Math.min(graphWidthValue, graphHeightValue / 2),
-
-      tickSizeValue: "10"
+      labelDurationTime: 200
     };
 
     const chartsManager = {
@@ -108,6 +108,7 @@
         ).reduce((acc, currVal) => acc + currVal)
     };
 
+    // get graphMargin value to set all deviations related to the positioning;
     const { graphMargin } = chartParams;
 
     const chartDeviations = {
@@ -140,11 +141,13 @@
         }
       },
       lineChartDeviations: {
+        lineChartVerticalParam: graphMargin.left * 3,
         lineChartHorizontalParam: graphMargin.top * 3,
         lineChartDataYearDeviationForXAxes: 10
       }
     };
 
+    // operations connected with svg element and charts params;
     const getSvgAndGraphParams = chartField => {
       const { margin, container } = chartParams;
 
@@ -195,27 +198,31 @@
       return mainChart;
     };
 
-    // create main graphs for dahsboard
-    const { chartFields } = chartParams;
+    // create main charts for dahsboard
+    const { chartFields, translate } = chartParams;
     const { circular, lollipop, pie, line } = chartFields;
+    const {
+      circularBarPlotDeviations,
+      lollipopDeviations,
+      pieChartDeviations,
+      lineChartDeviations
+    } = chartDeviations;
 
-    const circularPosition = chartParams.translate(
-      chartDeviations.circularBarPlotDeviations.chartPositionDeviation
-        .horizontalParam,
-      chartDeviations.circularBarPlotDeviations.chartPositionDeviation
-        .verticalParam
+    const circularPosition = translate(
+      circularBarPlotDeviations.chartPositionDeviation.horizontalParam,
+      circularBarPlotDeviations.chartPositionDeviation.verticalParam
     );
-    const lollipopPosition = chartParams.translate(
-      chartDeviations.lollipopDeviations.chartPositionDeviation.horizontalParam,
-      chartDeviations.lollipopDeviations.chartPositionDeviation.verticalParam
+    const lollipopPosition = translate(
+      lollipopDeviations.chartPositionDeviation.horizontalParam,
+      lollipopDeviations.chartPositionDeviation.verticalParam
     );
-    const piePosition = chartParams.translate(
-      chartDeviations.pieChartDeviations.chartPositionDeviation.horizontalParam,
-      chartDeviations.pieChartDeviations.chartPositionDeviation.verticalParam
+    const piePosition = translate(
+      pieChartDeviations.chartPositionDeviation.horizontalParam,
+      pieChartDeviations.chartPositionDeviation.verticalParam
     );
-    const lineChartPosition = chartParams.translate(
-      graphMargin.left * 3,
-      chartDeviations.lineChartDeviations.lineChartHorizontalParam
+    const lineChartPosition = translate(
+      lineChartDeviations.lineChartVerticalParam,
+      lineChartDeviations.lineChartHorizontalParam
     );
 
     const circularGraph = getMainChartStructure(circular, circularPosition);
@@ -223,6 +230,7 @@
     const pieGraph = getMainChartStructure(pie, piePosition);
     const lineGraph = getMainChartStructure(line, lineChartPosition);
 
+    // data operations
     const createDataHelpers = () => {
       const getItemByProperty = (item, property) => item[property];
 
@@ -251,7 +259,6 @@
       };
     };
 
-    // data operations
     const getPreparedData = data => {
       const {
         getItemByProperty,
@@ -260,7 +267,6 @@
         getAdditionalData
       } = createDataHelpers();
 
-      // modified data
       const additionalData = getAdditionalData(
         data,
         getItemByProperty,
@@ -308,27 +314,6 @@
           PROPERTY_PUBLISHER
         )
       );
-
-      // count and sort data
-      const getCountedAndSortedData = (dataToCount, propertyName) => {
-        const countedMainData = dataToCount.reduce(
-          (allProperties, property) => {
-            property in allProperties
-              ? allProperties[property]++
-              : (allProperties[property] = 1);
-
-            return allProperties;
-          },
-          {}
-        );
-
-        const mainData = Object.keys(countedMainData).map(key => ({
-          [propertyName]: String(key),
-          value: countedMainData[key]
-        }));
-
-        return mainData;
-      };
 
       const getCountedDataYears = (data, propertyName) => {
         const allPeriods = [];
@@ -381,6 +366,27 @@
         getPeriods(data, minYear, minYear + 10);
 
         return allPeriods;
+      };
+
+      // count and sort data
+      const getCountedAndSortedData = (dataToCount, propertyName) => {
+        const countedMainData = dataToCount.reduce(
+          (allProperties, property) => {
+            property in allProperties
+              ? allProperties[property]++
+              : (allProperties[property] = 1);
+
+            return allProperties;
+          },
+          {}
+        );
+
+        const mainData = Object.keys(countedMainData).map(key => ({
+          [propertyName]: String(key),
+          value: countedMainData[key]
+        }));
+
+        return mainData;
       };
 
       const sortedDataForCircular = getCountedAndSortedData(
@@ -492,12 +498,17 @@
       getPieChartParams(pieChartData);
     };
 
+    // calculation of scales, axes, labels and other necessary elements for charts
     const getCalculatedCircularBarsData = circularBarPlotData => {
+      const {
+        chartFields,
+        circularBarInnerRadius,
+        circularBarOuterRadius
+      } = chartParams;
       const {
         calculatedGraphWidth,
         calculatedGraphHeight
-      } = getSvgAndGraphParams(chartParams.chartFields.circular);
-      const { circularBarInnerRadius, circularBarOuterRadius } = chartParams;
+      } = getSvgAndGraphParams(chartFields.circular);
 
       const circularX = d3
         .scaleBand()
@@ -530,13 +541,13 @@
     };
 
     const getCalculatedLollipopAxes = lollipopData => {
-      const { tickSizeValue } = chartParams;
+      const { chartFields, tickSizeValue } = chartParams;
       const { labelsParams } = chartsVisualElements;
       const { fontFamily, axesFontSize, axesLetterSpacing } = labelsParams;
       const {
         calculatedGraphWidth,
         calculatedGraphHeight
-      } = getSvgAndGraphParams(chartParams.chartFields.lollipop);
+      } = getSvgAndGraphParams(chartFields.lollipop);
 
       const lollipopAxesAttributes = selection =>
         selection
@@ -703,20 +714,94 @@
       return { lineX, lineY };
     };
 
-    const getPreparedLine = (xAxis, yAxis) => {
-      const getLine = d3
+    const getLine = (xAxis, yAxis) =>
+      d3
         .line()
         .x(d => xAxis(d.year))
         .y(d => yAxis(d.value));
-
-      return getLine;
-    };
 
     const getCalculatedLineChartElementsPositions = () => {
       const getCalculatedLineYPosition = (y, value) =>
         y(value) - graphMargin.left;
 
       return { getCalculatedLineYPosition };
+    };
+
+    // animations and user events
+    const handlePathAnimation = (d, i, n) => {
+      const { delayTime, durationTime } = chartParams;
+
+      let totalLength = n[i].getTotalLength();
+      d3.select(n[i])
+        .attr("stroke-dasharray", `${totalLength} ${totalLength}`)
+        .attr("stroke-dashoffset", totalLength)
+        .transition()
+        .delay(delayTime)
+        .duration(durationTime)
+        .attr("stroke-dashoffset", 0);
+    };
+
+    const handleArcAnimation = (d, arcGenerator) => {
+      const i = d3.interpolate(d.endAngle, d.startAngle);
+
+      const getPieAnimated = t => {
+        d.startAngle = i(t);
+        return arcGenerator(d);
+      };
+
+      return getPieAnimated;
+    };
+
+    const handleEvents = (
+      graphType,
+      selection,
+      type,
+      clickedType,
+      clickedColor,
+      color
+    ) => {
+      const { visible, hidden } = chartsVisualElements;
+      const { labelDurationTime } = chartParams;
+
+      const isClicked = (param1, param2) => (clickedType ? param1 : param2);
+
+      const handleDisplayLabels = (d, i, n) => {
+        d3.selectAll(n)
+          .transition()
+          .duration(labelDurationTime)
+          .attr("fill", isClicked(clickedColor, color));
+
+        d3.selectAll(type)
+          .transition()
+          .duration(labelDurationTime)
+          .style("opacity", isClicked(visible, hidden));
+      };
+
+      graphType.selectAll(selection).on("click", (d, i, n) => {
+        handleDisplayLabels(d, i, n);
+        clickedType = !clickedType;
+      });
+    };
+
+    // grouped attributes for labels
+    const getLabelVisualAttributes = selection => {
+      const { labelsParams } = chartsVisualElements;
+      const {
+        fontFamily,
+        fontWeight,
+        fontSize,
+        labelColor,
+        opacityValue,
+        letterSpacing
+      } = labelsParams;
+
+      return selection
+        .style("font-family", fontFamily)
+        .style("font-size", fontSize)
+        .style("font-weight", fontWeight)
+        .style("fill", labelColor)
+        .style("opacity", opacityValue)
+        .style("letter-spacing", letterSpacing);
     };
 
     const renderView = (
@@ -738,7 +823,7 @@
       lineChartData,
       lineX,
       lineY,
-      getLine,
+      calculatedLine,
       getCalculatedLineYPosition
     ) => {
       const {
@@ -749,37 +834,9 @@
         cursorPointer
       } = chartsVisualElements;
       const { pieLinesColor, piePolylineColors } = colors;
-      const {
-        fontFamily,
-        fontWeight,
-        fontSize,
-        labelColor,
-        opacityValue,
-        letterSpacing,
-        textAnchorPosition
-      } = labelsParams;
-      const { labelTypes, durationTime, delayTime } = chartParams;
+      const { opacityValue, textAnchorPosition } = labelsParams;
+      const { labelTypes, durationTime } = chartParams;
       const { circularClass, lollipopClass, pieClass, lineClass } = labelTypes;
-
-      const getLabelVisualAttributes = selection =>
-        selection
-          .style("font-family", fontFamily)
-          .style("font-size", fontSize)
-          .style("font-weight", fontWeight)
-          .style("fill", labelColor)
-          .style("opacity", opacityValue)
-          .style("letter-spacing", letterSpacing);
-
-      const handlePathAnimation = (d, i, n) => {
-        let totalLength = n[i].getTotalLength();
-        d3.select(n[i])
-          .attr("stroke-dasharray", `${totalLength} ${totalLength}`)
-          .attr("stroke-dashoffset", totalLength)
-          .transition()
-          .delay(delayTime)
-          .duration(durationTime)
-          .attr("stroke-dashoffset", 0);
-      };
 
       const circularBars = circularGraph
         .append("g")
@@ -895,7 +952,10 @@
         .attr("fill", chartsVisualElements.colors.pieColor)
         .attr("stroke", pieLinesColor)
         .attr("stroke-width", strokeWidth)
-        .attr("cursor", cursorPointer);
+        .attr("cursor", cursorPointer)
+        .transition()
+        .duration(durationTime)
+        .attrTween("d", d => handleArcAnimation(d, arcGenerator));
 
       pieLabels
         .enter()
@@ -928,7 +988,7 @@
       lineChartLine
         .enter()
         .append("path")
-        .attr("d", getLine(lineChartData))
+        .attr("d", calculatedLine(lineChartData))
         .attr("stroke", chartsVisualElements.colors.lineChartLineColor)
         .attr("stroke-width", strokeWidth)
         .attr("fill", noneFill)
@@ -958,37 +1018,6 @@
       lineChartLabels.exit().remove();
       lineChartLine.exit().remove();
       lineChartCircles.exit().remove();
-    };
-
-    const handleEvents = (
-      graphType,
-      selection,
-      type,
-      clickedType,
-      clickedColor,
-      color
-    ) => {
-      const { visible, hidden } = chartsVisualElements;
-      const { labelDurationTime } = chartParams;
-
-      const isClicked = (param1, param2) => (clickedType ? param1 : param2);
-
-      const handleDisplayLabels = (d, i, n) => {
-        d3.selectAll(n)
-          .transition()
-          .duration(labelDurationTime)
-          .attr("fill", isClicked(clickedColor, color));
-
-        d3.selectAll(type)
-          .transition()
-          .duration(labelDurationTime)
-          .style("opacity", isClicked(visible, hidden));
-      };
-
-      graphType.selectAll(selection).on("click", (d, i, n) => {
-        handleDisplayLabels(d, i, n);
-        clickedType = !clickedType;
-      });
     };
 
     const update = (
@@ -1036,7 +1065,7 @@
       } = getCalculatedPieChartLabels(arcGenerator);
 
       const { lineX, lineY } = getCalculatedLineChartAxes(lineChartData);
-      const getLine = getPreparedLine(lineX, lineY);
+      const calculatedLine = getLine(lineX, lineY);
       const {
         getCalculatedLineYPosition
       } = getCalculatedLineChartElementsPositions();
@@ -1060,7 +1089,7 @@
         lineChartData,
         lineX,
         lineY,
-        getLine,
+        calculatedLine,
         getCalculatedLineYPosition
       );
 
