@@ -95,6 +95,19 @@
       tickSizeValue: "10"
     };
 
+    const chartsManager = {
+      getFormattedYear: d => Number(d.year.slice(5)),
+      getElementsHigherThanOne: arr =>
+        arr.filter(item => filterDataHigherThenOne(item, PROPERTY_VALUE)),
+      getAndCountElementsLowerThenOne: arr =>
+        getDataByProperty(
+          arr,
+          filterDataLowerThenOne,
+          getItemByProperty,
+          PROPERTY_VALUE
+        ).reduce((acc, currVal) => acc + currVal)
+    };
+
     const { graphMargin } = chartParams;
 
     const chartDeviations = {
@@ -196,29 +209,47 @@
       chartDeviations.lollipopDeviations.chartPositionDeviation.horizontalParam,
       chartDeviations.lollipopDeviations.chartPositionDeviation.verticalParam
     );
+    const piePosition = chartParams.translate(
+      chartDeviations.pieChartDeviations.chartPositionDeviation.horizontalParam,
+      chartDeviations.pieChartDeviations.chartPositionDeviation.verticalParam
+    );
 
     const circularGraph = getMainChartStructure(circular, circularPosition);
     const lollipopGraph = getMainChartStructure(lollipop, lollipopPosition);
+    const pieGraph = getMainChartStructure(pie, piePosition);
 
-    // data operations
-    const getPreparedData = data => {
-      //   data helpers
+    const createDataHelpers = () => {
       const getItemByProperty = (item, property) => item[property];
-
       const filterDataHigherThenOne = (item, property) => item[property] > 1;
       const filterDataLowerThenOne = (item, property) => item[property] <= 1;
-
       const sortDataByProperty = (firstItem, secondItem, property) =>
         firstItem[property] - secondItem[property];
-
       const getDataByProperty = (arr, filterItem, getItem, propertyName) =>
         arr.reduce((acc, el) => {
           if (!filterItem(el, propertyName)) return acc;
           return [...acc, getItem(el, propertyName)];
         }, []);
-
       const getAdditionalData = (arr, getItem, propertyName) =>
         arr.find(item => getItem(item, propertyName))[propertyName];
+
+      return {
+        getItemByProperty,
+        filterDataHigherThenOne,
+        filterDataLowerThenOne,
+        sortDataByProperty,
+        getDataByProperty,
+        getAdditionalData
+      };
+    };
+
+    // data operations
+    const getPreparedData = data => {
+      const {
+        getItemByProperty,
+        sortDataByProperty,
+        getDataByProperty,
+        getAdditionalData
+      } = createDataHelpers();
 
       // modified data
       const additionalData = getAdditionalData(
@@ -255,6 +286,20 @@
         )
       );
 
+      const dataPublishers = getDataByProperty(
+        data,
+        getItemByProperty,
+        getItemByProperty,
+        PROPERTY_PUBLISHER
+      ).concat(
+        getDataByProperty(
+          additionalData,
+          getItemByProperty,
+          getItemByProperty,
+          PROPERTY_PUBLISHER
+        )
+      );
+
       // count and sort data
       const getCountedAndSortedData = (dataToCount, propertyName) => {
         const countedMainData = dataToCount.reduce(
@@ -286,11 +331,31 @@
         PROPERTY_GENRE
       ).sort((a, b) => sortDataByProperty(b, a, PROPERTY_VALUE));
 
-      getCalculatedLollipopData(sortedDataForLollipop);
+      const sortedDataForPieChart = getCountedAndSortedData(
+        dataPublishers,
+        PROPERTY_PUBLISHER
+      );
+
+      getCalulatedData(
+        sortedDataForCircular,
+        sortedDataForLollipop,
+        sortedDataForPieChart
+      );
     };
 
-    const getCalculatedLollipopData = sortedMainData => {
-      const lollipopData = sortedMainData.map((d, i) => ({
+    const getCalulatedData = (
+      sortedDataForCircular,
+      sortedDataForLollipop,
+      sortedDataForPieChart
+    ) => {
+      const circularBarPlotData = sortedDataForCircular.map((d, i) => ({
+        id: i,
+        city: d.city,
+        value: d.value,
+        barColor: chartsVisualElements.colors.circularBarColor
+      }));
+
+      const lollipopData = sortedDataForLollipop.map((d, i) => ({
         id: i,
         genre: d.genre,
         value: d.value,
@@ -305,8 +370,84 @@
         circleColor: chartsVisualElements.colors.lollipopCircleColor
       }));
 
-      update(lollipopData);
+      const preparedDataForPieChart = () => {
+        const {
+          getItemByProperty,
+          filterDataHigherThenOne,
+          filterDataLowerThenOne,
+          getDataByProperty
+        } = createDataHelpers();
+
+        const getElementsHigherThanOne = arr =>
+          arr.filter(item => filterDataHigherThenOne(item, PROPERTY_VALUE));
+        const getAndCountElementsLowerThenOne = arr =>
+          getDataByProperty(
+            arr,
+            filterDataLowerThenOne,
+            getItemByProperty,
+            PROPERTY_VALUE
+          ).reduce((acc, currVal) => acc + currVal);
+
+        const mainData = getElementsHigherThanOne(sortedDataForPieChart);
+        const countedOthers = getAndCountElementsLowerThenOne(
+          sortedDataForPieChart
+        );
+
+        const others = [countedOthers].map(d => ({
+          publisher: "Other publishers",
+          value: d
+        }));
+
+        return mainData.concat(others);
+      };
+
+      const pieChartData = preparedDataForPieChart().map((d, i) => ({
+        id: i,
+        publisher: d.publisher,
+        value: d.value
+      }));
+
+      update(circularBarPlotData, lollipopData, pieChartData);
+      getCalculatedCircularBarsData(circularBarPlotData);
       getCalculatedLollipopAxes(lollipopData);
+      getPieChartParams(pieChartData);
+    };
+
+    const getCalculatedCircularBarsData = circularBarPlotData => {
+      const {
+        calculatedGraphWidth,
+        calculatedGraphHeight
+      } = getSvgAndGraphParams(chartParams.chartFields.circular);
+      const { circularBarInnerRadius, circularBarOuterRadius } = chartParams;
+
+      const circularX = d3
+        .scaleBand()
+        .range([0, 2 * Math.PI])
+        .domain(circularBarPlotData.map(d => d.city));
+      const circularY = d3
+        .scaleRadial()
+        .range([
+          circularBarInnerRadius,
+          circularBarOuterRadius(calculatedGraphWidth, calculatedGraphHeight)
+        ])
+        .domain([0, Math.max(...circularBarPlotData.map(d => d.value))]);
+
+      const barsData = d3
+        .arc()
+        .innerRadius(circularBarInnerRadius)
+        .outerRadius(d => circularY(d.value))
+        .startAngle(d => circularX(d.city))
+        .endAngle(d => circularX(d.city) + circularX.bandwidth());
+
+      return { circularX, circularY, barsData };
+    };
+
+    const getCalculatedCircularBarplotLabels = () => {
+      const getCircularLabelsPositions = (x, y, value1, value2) => `rotate(
+          ${((x(value1) + x.bandwidth() / 2) * 180) / Math.PI -
+            90}) translate(${y(value2) + 5},0)`;
+
+      return getCircularLabelsPositions;
     };
 
     const getCalculatedLollipopAxes = lollipopData => {
@@ -318,18 +459,17 @@
         calculatedGraphHeight
       } = getSvgAndGraphParams(chartParams.chartFields.lollipop);
 
-      const lollipopAxesAttributes = selection => {
+      const lollipopAxesAttributes = selection =>
         selection
           .style("font-family", fontFamily)
           .style("font-size", axesFontSize)
           .style("letter-spacing", axesLetterSpacing);
-      };
 
-      const x = d3
+      const lollipopX = d3
         .scaleLinear()
         .domain([0, Math.max(...lollipopData.map(d => d.value))])
         .range([graphMargin.right, calculatedGraphWidth - graphMargin.left]);
-      const bottomAxis = d3.axisBottom(x).tickSize(tickSizeValue);
+      const bottomAxis = d3.axisBottom(lollipopX).tickSize(tickSizeValue);
       lollipopGraph
         .append("g")
         .attr("transform", chartParams.translate(0, calculatedGraphHeight))
@@ -337,11 +477,11 @@
         .call(bottomAxis)
         .call(lollipopAxesAttributes);
 
-      const y = d3
+      const lollipopY = d3
         .scaleBand()
         .domain([...lollipopData.map(d => d.genre)])
         .range([graphMargin.left, calculatedGraphHeight]);
-      const leftAxis = d3.axisLeft(y).tickSize(tickSizeValue);
+      const leftAxis = d3.axisLeft(lollipopY).tickSize(tickSizeValue);
       lollipopGraph
         .append("g")
         .attr("transform", chartParams.translate(graphMargin.right, 0))
@@ -349,7 +489,7 @@
         .call(leftAxis)
         .call(lollipopAxesAttributes);
 
-      return { x, y };
+      return { lollipopX, lollipopY };
     };
 
     const getCalculatedLollipopElementsPositions = () => {
@@ -365,93 +505,259 @@
       return { getCalculatedLollipopXPosition, getCalculatedLollipopYPosition };
     };
 
+    const getPieChartParams = pieChartData => {
+      const {
+        calculatedGraphWidth,
+        calculatedGraphHeight
+      } = getSvgAndGraphParams(chartParams.chartFields.pie);
+
+      const getPie = d3.pie().value(d => d.value);
+      const pie = getPie(pieChartData);
+
+      const arcGenerator = d3
+        .arc()
+        .innerRadius(0)
+        .outerRadius(
+          chartParams.pieRadius(calculatedGraphWidth, calculatedGraphHeight)
+        );
+
+      return { pie, arcGenerator };
+    };
+
+    const getCalculatedPieChartLabels = arcGenerator => {
+      const {
+        calculatedGraphWidth,
+        calculatedGraphHeight
+      } = getSvgAndGraphParams(chartParams.chartFields.pie);
+
+      const outerArc = d3
+        .arc()
+        .innerRadius(
+          chartParams.pieRadius(calculatedGraphWidth, calculatedGraphHeight) *
+            1.5
+        )
+        .outerRadius(
+          chartParams.pieRadius(calculatedGraphWidth, calculatedGraphHeight) *
+            1.1
+        );
+
+      const midangle = d => d.startAngle + (d.endAngle - d.startAngle) / 2;
+
+      const getTranslatedPieLabels = d => {
+        const pos = outerArc.centroid(d);
+        pos[0] =
+          chartParams.pieRadius(calculatedGraphWidth, calculatedGraphHeight) *
+          1.3 *
+          (midangle(d) < Math.PI ? 1 : -1);
+        return `translate(${pos})`;
+      };
+
+      const getPositionatedPieLabels = d =>
+        midangle(d) < Math.PI ? "start" : "end";
+
+      const getPositionatedPiePolylines = d => {
+        const posA = arcGenerator.centroid(d);
+        const posB = outerArc.centroid(d);
+        const posC = outerArc.centroid(d);
+        posC[0] =
+          chartParams.pieRadius(calculatedGraphWidth, calculatedGraphHeight) *
+          1.3 *
+          (midangle(d) < Math.PI ? 1 : -1);
+        return [posA, posB, posC];
+      };
+
+      return {
+        getTranslatedPieLabels,
+        getPositionatedPieLabels,
+        getPositionatedPiePolylines
+      };
+    };
+
     const renderView = (
       lollipopData,
       getCalculatedLollipopXPosition,
-      x,
+      lollipopX,
       getCalculatedLollipopYPosition,
-      y
+      lollipopY,
+      circularBarPlotData,
+      circularX,
+      circularY,
+      barsData,
+      getCircularLabelsPositions,
+      pie,
+      arcGenerator,
+      getTranslatedPieLabels,
+      getPositionatedPieLabels,
+      getPositionatedPiePolylines
     ) => {
-      const { strokeWidth, labelsParams, cursorPointer } = chartsVisualElements;
+      const {
+        colors,
+        strokeWidth,
+        labelsParams,
+        noneFill,
+        cursorPointer
+      } = chartsVisualElements;
+      const { pieLinesColor, piePolylineColors } = colors;
       const {
         fontFamily,
         fontWeight,
         fontSize,
         labelColor,
         opacityValue,
-        letterSpacing
+        letterSpacing,
+        textAnchorPosition
       } = labelsParams;
-      const { chartFields, labelTypes, durationTime } = chartParams;
-      const { circular, lollipop, pie, line } = chartFields;
-      const { lollipopClass } = labelTypes;
+      const { labelTypes, durationTime } = chartParams;
+      const { circularClass, lollipopClass, pieClass, lineClass } = labelTypes;
+
+      const getLabelVisualAttributes = selection =>
+        selection
+          .style("font-family", fontFamily)
+          .style("font-size", fontSize)
+          .style("font-weight", fontWeight)
+          .style("fill", labelColor)
+          .style("opacity", opacityValue)
+          .style("letter-spacing", letterSpacing);
+
+      const circularBars = circularGraph
+        .append("g")
+        .selectAll("path")
+        .data(circularBarPlotData, d => d.id);
+      const circularLabels = circularGraph
+        .append("g")
+        .selectAll("text")
+        .data(circularBarPlotData, d => d.id);
 
       const lollipopLlines = lollipopGraph
         .append("g")
         .selectAll("line")
         .data(lollipopData, d => d.id);
-
       const lolliPopCircles = lollipopGraph
         .append("g")
         .selectAll("circle")
         .data(lollipopData, d => d.id);
-
       const lolliPopLabels = lollipopGraph
         .append("g")
         .selectAll("text")
         .data(lollipopData, d => d.id);
 
+      const piePath = pieGraph
+        .append("g")
+        .selectAll("path")
+        .data(pie, d => d.data.id);
+      const pieLabels = pieGraph
+        .append("g")
+        .selectAll("text")
+        .data(pie, d => d.data.id);
+      const piePolylines = pieGraph
+        .append("g")
+        .selectAll("polyline")
+        .data(pie, d => d.data.id);
+
+      circularBars
+        .enter()
+        .append("path")
+        .attr("fill", d => d.barColor)
+        .attr("d", barsData)
+        .attr("cursor", cursorPointer);
+
+      circularLabels
+        .enter()
+        .append("text")
+        .attr("class", circularClass.substr(1))
+        .text(d => `${d.city}: ${d.value}`)
+        .attr("text-anchor", textAnchorPosition)
+        .attr("transform", d =>
+          getCircularLabelsPositions(circularX, circularY, d.city, d.value)
+        )
+        .call(getLabelVisualAttributes);
+
       lollipopLlines
         .enter()
         .append("line")
-        .attr("x1", x(0))
-        .attr("x2", d => x(d.x2))
-        .attr("y1", d => getCalculatedLollipopYPosition(y, d.y1))
-        .attr("y2", d => getCalculatedLollipopYPosition(y, d.y2))
+        .attr("x1", lollipopX(0))
+        .attr("x2", d => lollipopX(d.x2))
+        .attr("y1", d => getCalculatedLollipopYPosition(lollipopY, d.y1))
+        .attr("y2", d => getCalculatedLollipopYPosition(lollipopY, d.y2))
         .attr("stroke", d => d.lineColor)
         .attr("stroke-width", strokeWidth)
         .transition()
         .duration(durationTime)
-        .attr("x1", d => x(d.x1));
+        .attr("x1", d => lollipopX(d.x1));
 
       lolliPopCircles
         .enter()
         .append("circle")
-        .attr("cx", x(0))
-        .attr("cy", d => getCalculatedLollipopYPosition(y, d.cy))
+        .attr("cx", lollipopX(0))
+        .attr("cy", d => getCalculatedLollipopYPosition(lollipopY, d.cy))
         .attr("r", d => d.r)
         .attr("fill", d => d.circleColor)
         .attr("cursor", cursorPointer)
         .transition()
         .duration(durationTime)
-        .attr("cx", d => x(d.cx));
+        .attr("cx", d => lollipopX(d.cx));
 
       lolliPopLabels
         .enter()
         .append("text")
         .attr("class", lollipopClass.substr(1))
         .text(d => d.value)
-        .attr("x", d => getCalculatedLollipopXPosition(x, d.cx))
+        .attr("x", d => getCalculatedLollipopXPosition(lollipopX, d.cx))
         .attr(
           "y",
           d =>
-            getCalculatedLollipopYPosition(y, d.cy) +
+            getCalculatedLollipopYPosition(lollipopY, d.cy) +
             chartDeviations.lollipopDeviations.labelsDeviation
         )
-        .style("font-family", fontFamily)
-        .style("font-size", fontSize)
-        .style("font-weight", fontWeight)
-        .style("fill", labelColor)
-        .style("opacity", opacityValue)
-        .style("letter-spacing", letterSpacing);
+        .call(getLabelVisualAttributes);
 
+      piePath
+        .enter()
+        .append("path")
+        .attr("d", arcGenerator)
+        .attr("fill", chartsVisualElements.colors.pieColor)
+        .attr("stroke", pieLinesColor)
+        .attr("stroke-width", strokeWidth)
+        .attr("cursor", cursorPointer);
+
+      pieLabels
+        .enter()
+        .append("text")
+        .attr("class", pieClass.substr(1))
+        .text(d => d.data.publisher)
+        .attr("transform", d => getTranslatedPieLabels(d))
+        .style("text-anchor", d => getPositionatedPieLabels(d))
+        .call(getLabelVisualAttributes);
+
+      piePolylines
+        .enter()
+        .append("polyline")
+        .attr("class", pieClass.substr(1))
+        .attr("fill", noneFill)
+        .attr("stroke", piePolylineColors)
+        .attr("stroke-width", strokeWidth)
+        .attr("points", d => getPositionatedPiePolylines(d))
+        .style("opacity", opacityValue);
+
+      circularBars.exit().remove();
+      circularLabels.exit().remove();
       lollipopLlines.exit().remove();
       lolliPopCircles.exit().remove();
       lolliPopLabels.exit().remove();
+      piePath.exit().remove();
+      pieLabels.exit().remove();
+      piePolylines.exit().remove();
     };
 
-    const handleEvents = (selection, type, clickedType) => {
-      const { colors, visible, hidden } = chartsVisualElements;
-      const { lollipopCircleColor, lollipopClickedCircleColor } = colors;
+    const handleEvents = (
+      graphType,
+      selection,
+      type,
+      clickedType,
+      clickedColor,
+      color
+    ) => {
+      const { visible, hidden } = chartsVisualElements;
       const { labelDurationTime } = chartParams;
 
       const isClicked = (param1, param2) => (clickedType ? param1 : param2);
@@ -460,10 +766,7 @@
         d3.selectAll(n)
           .transition()
           .duration(labelDurationTime)
-          .attr(
-            "fill",
-            isClicked(lollipopClickedCircleColor, lollipopCircleColor)
-          );
+          .attr("fill", isClicked(clickedColor, color));
 
         d3.selectAll(type)
           .transition()
@@ -471,39 +774,93 @@
           .style("opacity", isClicked(visible, hidden));
       };
 
-      lollipopGraph.selectAll(selection).on("click", (d, i, n) => {
+      graphType.selectAll(selection).on("click", (d, i, n) => {
         handleDisplayLabels(d, i, n);
         clickedType = !clickedType;
       });
     };
 
-    function update(lollipopData) {
-      const { chartFields, labelTypes, clickParams } = chartParams;
-      const { lollipop } = chartFields;
+    const update = (circularBarPlotData, lollipopData, pieChartData) => {
+      const { labelTypes, clickParams } = chartParams;
       const {
         clickedcircular,
         clickedlollipop,
         clickedpie,
         clickedline
       } = clickParams;
-      const { lollipopClass } = labelTypes;
+      const { circularClass, lollipopClass, pieClass, lineClass } = labelTypes;
+      const { colors } = chartsVisualElements;
+      const {
+        circularBarColor,
+        clickedCircularBarColor,
+        lollipopCircleColor,
+        lollipopClickedCircleColor,
+        pieColor,
+        pieClickedColor
+      } = colors;
 
-      const { x, y } = getCalculatedLollipopAxes(lollipopData);
+      const { circularX, circularY, barsData } = getCalculatedCircularBarsData(
+        circularBarPlotData
+      );
+      const getCircularLabelsPositions = getCalculatedCircularBarplotLabels();
+
+      const { lollipopX, lollipopY } = getCalculatedLollipopAxes(lollipopData);
       const {
         getCalculatedLollipopXPosition,
         getCalculatedLollipopYPosition
       } = getCalculatedLollipopElementsPositions();
 
+      const { pie, arcGenerator } = getPieChartParams(pieChartData);
+
+      const {
+        getTranslatedPieLabels,
+        getPositionatedPieLabels,
+        getPositionatedPiePolylines
+      } = getCalculatedPieChartLabels(arcGenerator);
+
       renderView(
         lollipopData,
         getCalculatedLollipopXPosition,
-        x,
+        lollipopX,
         getCalculatedLollipopYPosition,
-        y
+        lollipopY,
+        circularBarPlotData,
+        circularX,
+        circularY,
+        barsData,
+        getCircularLabelsPositions,
+        pie,
+        arcGenerator,
+        getTranslatedPieLabels,
+        getPositionatedPieLabels,
+        getPositionatedPiePolylines
       );
 
-      handleEvents("circle", lollipopClass, clickedlollipop);
-    }
+      handleEvents(
+        circularGraph,
+        "path",
+        circularClass,
+        clickedcircular,
+        clickedCircularBarColor,
+        circularBarColor
+      );
+      handleEvents(
+        lollipopGraph,
+        "circle",
+        lollipopClass,
+        clickedlollipop,
+        lollipopClickedCircleColor,
+        lollipopCircleColor
+      );
+      handleEvents(
+        pieGraph,
+        "path",
+        pieClass,
+        clickedpie,
+        pieClickedColor,
+        pieColor
+      );
+    };
 
     const getData = async () => {
       try {
