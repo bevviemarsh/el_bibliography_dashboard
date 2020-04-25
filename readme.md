@@ -21,7 +21,7 @@ This project constitute a part of my scientific research related to the digital 
 
 ### Launch
 
-Project is available [here](https://bevviemarsh.github.io/el_bibliography_dashboard/ "Ewa Lipska - bibliography dashboard") and [here](https://github.com/bevviemarsh/el_bibliography_dashboard_webpack, "Ewa Lipska - bibliography dashboard") is a repository where Webpack is used.
+Project is available [here](https://bevviemarsh.github.io/el_bibliography_dashboard/ "Ewa Lipska - bibliography dashboard") and [here](https://github.com/bevviemarsh/el_bibliography_dashboard_webpack "Ewa Lipska - bibliography dashboard") is a repository where Webpack is used.
 
 ### Project status
 
